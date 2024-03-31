@@ -1,7 +1,7 @@
 import re
 import cn2an
-import ToJyutping
 
+from pyjyutping import jyutping
 from text.symbols import punctuation
 
 normalizer = lambda x: cn2an.transform(x, "an2cn")
@@ -152,13 +152,9 @@ def jyuping_to_initials_finals_tones(jyuping_syllables):
 
 
 def get_jyutping(text):
-    result = []
-    for char, jp in ToJyutping.get_jyutping_list(text):
-        if jp:
-            result.append(jp)
-        else:
-            result.append(char)
-    return result
+    jp = jyutping.convert(text)
+    jp_array = jp.split()
+    return jp_array
 
 
 def get_bert_feature(text, word2ph):

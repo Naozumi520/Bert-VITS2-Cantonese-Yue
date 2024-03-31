@@ -13,341 +13,6 @@ import pyopenjtalk
 import jaconv
 
 
-# Mapping of hiragana to phonetic representation
-hiragana_map = {
-    "う゛ぁ": " v a",
-    "う゛ぃ": " v i",
-    "う゛ぇ": " v e",
-    "う゛ぉ": " v o",
-    "う゛ゅ": " by u",
-    "ぅ゛": " v u",
-    # ゔ等の処理を追加
-    "ゔぁ": " v a",
-    "ゔぃ": " v i",
-    "ゔぇ": " v e",
-    "ゔぉ": " v o",
-    "ゔゅ": " by u",
-    # 2文字からなる変換規則
-    "あぁ": " a a",
-    "いぃ": " i i",
-    "いぇ": " i e",
-    "いゃ": " y a",
-    "うぅ": " u:",
-    "えぇ": " e e",
-    "おぉ": " o:",
-    "かぁ": " k a:",
-    "きぃ": " k i:",
-    "くぅ": " k u:",
-    "くゃ": " ky a",
-    "くゅ": " ky u",
-    "くょ": " ky o",
-    "けぇ": " k e:",
-    "こぉ": " k o:",
-    "がぁ": " g a:",
-    "ぎぃ": " g i:",
-    "ぐぅ": " g u:",
-    "ぐゃ": " gy a",
-    "ぐゅ": " gy u",
-    "ぐょ": " gy o",
-    "げぇ": " g e:",
-    "ごぉ": " g o:",
-    "さぁ": " s a:",
-    "しぃ": " sh i",
-    "すぅ": " s u:",
-    "すゃ": " sh a",
-    "すゅ": " sh u",
-    "すょ": " sh o",
-    "せぇ": " s e:",
-    "そぉ": " s o:",
-    "ざぁ": " z a:",
-    "じぃ": " j i:",
-    "ずぅ": " z u:",
-    "ずゃ": " zy a",
-    "ずゅ": " zy u",
-    "ずょ": " zy o",
-    "ぜぇ": " z e:",
-    "ぞぉ": " z o:",
-    "たぁ": " t a:",
-    "ちぃ": " ch i",
-    "つぁ": " ts a",
-    "つぃ": " ts i",
-    "つぅ": " ts u",
-    "つゃ": " ch a",
-    "つゅ": " ch u",
-    "つょ": " ch o",
-    "つぇ": " ts e",
-    "つぉ": " ts o",
-    "てぇ": " t e:",
-    "とぉ": " t o:",
-    "だぁ": " d a:",
-    "ぢぃ": " j i:",
-    "づぅ": " d u:",
-    "づゃ": " zy a",
-    "づゅ": " zy u",
-    "づょ": " zy o",
-    "でぇ": " d e:",
-    "なぁ": " n a:",
-    "にぃ": " n i:",
-    "ぬぅ": " n u:",
-    "ぬゃ": " ny a",
-    "ぬゅ": " ny u",
-    "ぬょ": " ny o",
-    "ねぇ": " n e:",
-    "のぉ": " n o:",
-    "はぁ": " h a:",
-    "ひぃ": " h i:",
-    "ふぅ": " f u:",
-    "ふゃ": " hy a",
-    "へぇ": " h e:",
-    "ほぉ": " h o:",
-    "ばぁ": " b a:",
-    "びぃ": " b i:",
-    "ぶぅ": " b u:",
-    "ぶゅ": " by u",
-    "べぇ": " b e:",
-    "ぼぉ": " b o:",
-    "ぱぁ": " p a:",
-    "ぴぃ": " p i:",
-    "ぷぅ": " p u:",
-    "ぷゃ": " py a",
-    "ぷゅ": " py u",
-    "ぷょ": " py o",
-    "ぺぇ": " p e:",
-    "ぽぉ": " p o:",
-    "まぁ": " m a:",
-    "みぃ": " m i:",
-    "むぅ": " m u:",
-    "むゃ": " my a",
-    "むゅ": " my u",
-    "むょ": " my o",
-    "めぇ": " m e:",
-    "もぉ": " m o:",
-    "やぁ": " y a:",
-    "ゆぅ": " y u:",
-    "ゆゃ": " y a:",
-    "ゆゅ": " y u:",
-    "ゆょ": " y o:",
-    "よぉ": " y o:",
-    "らぁ": " r a:",
-    "りぃ": " r i:",
-    "るぅ": " r u:",
-    "るゃ": " ry a",
-    "るゅ": " ry u",
-    "るょ": " ry o",
-    "れぇ": " r e:",
-    "ろぉ": " r o:",
-    "わぁ": " w a:",
-    "をぉ": " o:",
-    "う゛": " b u",
-    "でぃ": " d i",
-    "でゃ": " dy a",
-    "でゅ": " dy u",
-    "でょ": " dy o",
-    "てぃ": " t i",
-    "てゃ": " ty a",
-    "てゅ": " ty u",
-    "てょ": " ty o",
-    "すぃ": " s i",
-    "ずぁ": " z u",
-    "ずぃ": " z i",
-    "ずぇ": " z e",
-    "ずぉ": " z o",
-    "きゃ": " ky a",
-    "きゅ": " ky u",
-    "きょ": " ky o",
-    "しゃ": " sh a",
-    "しゅ": " sh u",
-    "しぇ": " sh e",
-    "しょ": " sh o",
-    "ちゃ": " ch a",
-    "ちゅ": " ch u",
-    "ちぇ": " ch e",
-    "ちょ": " ch o",
-    "とぅ": " t u",
-    "とゃ": " ty a",
-    "とゅ": " ty u",
-    "とょ": " ty o",
-    "どぁ": " d o ",
-    "どぅ": " d u",
-    "どゃ": " dy a",
-    "どゅ": " dy u",
-    "どょ": " dy o",
-    "どぉ": " d o:",
-    "にゃ": " ny a",
-    "にゅ": " ny u",
-    "にょ": " ny o",
-    "ひゃ": " hy a",
-    "ひゅ": " hy u",
-    "ひょ": " hy o",
-    "みゃ": " my a",
-    "みゅ": " my u",
-    "みょ": " my o",
-    "りゃ": " ry a",
-    "りゅ": " ry u",
-    "りょ": " ry o",
-    "ぎゃ": " gy a",
-    "ぎゅ": " gy u",
-    "ぎょ": " gy o",
-    "ぢぇ": " j e",
-    "ぢゃ": " j a",
-    "ぢゅ": " j u",
-    "ぢょ": " j o",
-    "じぇ": " j e",
-    "じゃ": " j a",
-    "じゅ": " j u",
-    "じょ": " j o",
-    "びゃ": " by a",
-    "びゅ": " by u",
-    "びょ": " by o",
-    "ぴゃ": " py a",
-    "ぴゅ": " py u",
-    "ぴょ": " py o",
-    "うぁ": " u a",
-    "うぃ": " w i",
-    "うぇ": " w e",
-    "うぉ": " w o",
-    "ふぁ": " f a",
-    "ふぃ": " f i",
-    "ふゅ": " hy u",
-    "ふょ": " hy o",
-    "ふぇ": " f e",
-    "ふぉ": " f o",
-    # 1音からなる変換規則
-    "あ": " a",
-    "い": " i",
-    "う": " u",
-    "ゔ": " v u",  # ゔの処理を追加
-    "え": " e",
-    "お": " o",
-    "か": " k a",
-    "き": " k i",
-    "く": " k u",
-    "け": " k e",
-    "こ": " k o",
-    "さ": " s a",
-    "し": " sh i",
-    "す": " s u",
-    "せ": " s e",
-    "そ": " s o",
-    "た": " t a",
-    "ち": " ch i",
-    "つ": " ts u",
-    "て": " t e",
-    "と": " t o",
-    "な": " n a",
-    "に": " n i",
-    "ぬ": " n u",
-    "ね": " n e",
-    "の": " n o",
-    "は": " h a",
-    "ひ": " h i",
-    "ふ": " f u",
-    "へ": " h e",
-    "ほ": " h o",
-    "ま": " m a",
-    "み": " m i",
-    "む": " m u",
-    "め": " m e",
-    "も": " m o",
-    "ら": " r a",
-    "り": " r i",
-    "る": " r u",
-    "れ": " r e",
-    "ろ": " r o",
-    "が": " g a",
-    "ぎ": " g i",
-    "ぐ": " g u",
-    "げ": " g e",
-    "ご": " g o",
-    "ざ": " z a",
-    "じ": " j i",
-    "ず": " z u",
-    "ぜ": " z e",
-    "ぞ": " z o",
-    "だ": " d a",
-    "ぢ": " j i",
-    "づ": " z u",
-    "で": " d e",
-    "ど": " d o",
-    "ば": " b a",
-    "び": " b i",
-    "ぶ": " b u",
-    "べ": " b e",
-    "ぼ": " b o",
-    "ぱ": " p a",
-    "ぴ": " p i",
-    "ぷ": " p u",
-    "ぺ": " p e",
-    "ぽ": " p o",
-    "や": " y a",
-    "ゆ": " y u",
-    "よ": " y o",
-    "わ": " w a",
-    "ゐ": " i",
-    "ゑ": " e",
-    "ん": " N",
-    "っ": " q",
-    # ここまでに処理されてない ぁぃぅぇぉ はそのまま大文字扱い
-    "ぁ": " a",
-    "ぃ": " i",
-    "ぅ": " u",
-    "ぇ": " e",
-    "ぉ": " o",
-    "ゎ": " w a",
-    # 長音の処理
-    # for (pattern, replace_str) in JULIUS_LONG_VOWEL:
-    #     text = pattern.sub(replace_str, text)
-    # text = text.replace("o u", "o:")  # おう -> おーの音便
-    "ー": ":",
-    "〜": ":",
-    "−": ":",
-    "-": ":",
-    # その他特別な処理
-    "を": " o",
-    # ここまでに処理されていないゅ等もそのまま大文字扱い（追加）
-    "ゃ": " y a",
-    "ゅ": " y u",
-    "ょ": " y o",
-}
-
-
-def hiragana2p(txt: str) -> str:
-    """
-    Modification of `jaconv.hiragana2julius`.
-    - avoid using `:`, instead, `あーーー` -> `a a a a`.
-    - avoid converting `o u` to `o o` (because the input is already actual `yomi`).
-    - avoid using `N` for `ん` (for compatibility)
-    - use `v` for `ゔ` related text.
-    - add bare `ゃ` `ゅ` `ょ` to `y a` `y u` `y o` (for compatibility).
-    """
-
-    result = []
-    skip = 0
-    for i in range(len(txt)):
-        if skip:
-            skip -= 1
-            continue
-
-        for length in range(3, 0, -1):
-            if txt[i : i + length] in hiragana_map:
-                result.append(hiragana_map[txt[i : i + length]])
-                skip = length - 1
-                break
-
-    txt = "".join(result)
-    txt = txt.strip()
-    txt = txt.replace(":+", ":")
-
-    # ここまで`jaconv.hiragana2julius`と音便処理と長音処理をのぞいて同じ
-    # ここから`k a:: k i:`→`k a a a k i i`のように`:`の数だけ繰り返す処理
-    pattern = r"(\w)(:*)"
-    replacement = lambda m: m.group(1) + (" " + m.group(1)) * len(m.group(2))
-
-    txt = re.sub(pattern, replacement, txt)
-    txt = txt.replace("N", "n")  # 促音のNをnに変換
-    return txt
-
-
 def kata2phoneme(text: str) -> str:
     """Convert katakana text to phonemes."""
     text = text.strip()
@@ -367,10 +32,14 @@ def kata2phoneme(text: str) -> str:
                 res.append(prev[-1])
             text = text[1:]
             continue
-        res += hiragana2p(jaconv.kata2hira(text)).split(" ")
+        res += pyopenjtalk.g2p(text).lower().replace("cl", "q").split(" ")
         break
     # res = _COLON_RX.sub(":", res)
     return res
+
+
+def hira2kata(text: str) -> str:
+    return jaconv.hira2kata(text)
 
 
 _SYMBOL_TOKENS = set(list("・、。？！"))
@@ -380,8 +49,41 @@ _MARKS = re.compile(
 )
 
 
-def text2sep_kata(text: str):
+def text2kata(text: str) -> str:
     parsed = pyopenjtalk.run_frontend(text)
+
+    res = []
+    for parts in parsed:
+        word, yomi = replace_punctuation(parts["string"]), parts["pron"].replace(
+            "’", ""
+        )
+        if yomi:
+            if re.match(_MARKS, yomi):
+                if len(word) > 1:
+                    word = [replace_punctuation(i) for i in list(word)]
+                    yomi = word
+                    res += yomi
+                    sep += word
+                    continue
+                elif word not in rep_map.keys() and word not in rep_map.values():
+                    word = ","
+                yomi = word
+            res.append(yomi)
+        else:
+            if word in _SYMBOL_TOKENS:
+                res.append(word)
+            elif word in ("っ", "ッ"):
+                res.append("ッ")
+            elif word in _NO_YOMI_TOKENS:
+                pass
+            else:
+                res.append(word)
+    return hira2kata("".join(res))
+
+
+def text2sep_kata(text: str) -> (list, list):
+    parsed = pyopenjtalk.run_frontend(text)
+
     res = []
     sep = []
     for parts in parsed:
@@ -410,7 +112,7 @@ def text2sep_kata(text: str):
             else:
                 res.append(word)
         sep.append(word)
-    return sep, res, get_accent(parsed)
+    return sep, [hira2kata(i) for i in res], get_accent(parsed)
 
 
 def get_accent(parsed):
@@ -521,6 +223,16 @@ def japanese_convert_numbers_to_words(text: str) -> str:
 
 def japanese_convert_alpha_symbols_to_words(text: str) -> str:
     return "".join([_ALPHASYMBOL_YOMI.get(ch, ch) for ch in text.lower()])
+
+
+def japanese_text_to_phonemes(text: str) -> str:
+    """Convert Japanese text to phonemes."""
+    res = unicodedata.normalize("NFKC", text)
+    res = japanese_convert_numbers_to_words(res)
+    # res = japanese_convert_alpha_symbols_to_words(res)
+    res = text2kata(res)
+    res = kata2phoneme(res)
+    return res
 
 
 def is_japanese_character(char):
