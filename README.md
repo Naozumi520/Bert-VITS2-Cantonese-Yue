@@ -1,3 +1,10 @@
+Demo: https://huggingface.co/spaces/Naozumi0512/Bert-VITS2-Cantonese
+
+
+
+
+## Original README content
+
 <div align="center">
 
 <img alt="LOGO" src="https://cdn.jsdelivr.net/gh/fishaudio/fish-diffusion@main/images/logo_512x512.png" width="256" height="256" />
