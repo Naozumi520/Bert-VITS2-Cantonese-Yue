@@ -32,13 +32,11 @@ zh_symbols = [
     "eoi",
     "eon",
     "eot",
-
     "eu",
     "em",
     "en",
     "ep",
     "et",
-
     "f",
     "g",
     "gw",

@@ -153,6 +153,8 @@ def jyuping_to_initials_finals_tones(jyuping_syllables):
 
 def get_jyutping(text):
     jp = jyutping.convert(text)
+    for symbol in punctuation:
+        jp = jp.replace(symbol, " " + symbol + " ")
     jp_array = jp.split()
     return jp_array
 
