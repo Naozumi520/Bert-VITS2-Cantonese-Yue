@@ -10,7 +10,7 @@ amfm_decompy
 jieba
 transformers
 pypinyin
-pyjyutping
+pinyin_jyutping
 cn2an
 gradio==3.50.2
 av

@@ -1,10 +1,11 @@
 import re
 import cn2an
+import pinyin_jyutping
 
-from pyjyutping import jyutping
 from text.symbols import punctuation
 
 normalizer = lambda x: cn2an.transform(x, "an2cn")
+j = pinyin_jyutping.PinyinJyutping()
 
 INITIALS = [
     "aa",
@@ -152,7 +153,7 @@ def jyuping_to_initials_finals_tones(jyuping_syllables):
 
 
 def get_jyutping(text):
-    jp = jyutping.convert(text)
+    jp = j.jyutping(text, tone_numbers=True, spaces=True)
     for symbol in punctuation:
         jp = jp.replace(symbol, " " + symbol + " ")
     jp_array = jp.split()
