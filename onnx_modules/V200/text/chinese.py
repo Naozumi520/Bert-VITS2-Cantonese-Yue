@@ -1,10 +1,12 @@
 import re
 import cn2an
+import pinyin_jyutping
 
 from pyjyutping import jyutping
 from .symbols import punctuation
 
 normalizer = lambda x: cn2an.transform(x, "an2cn")
+j = pinyin_jyutping.PinyinJyutping()
 
 INITIALS = [
     "aa",
@@ -152,11 +154,20 @@ def jyuping_to_initials_finals_tones(jyuping_syllables):
 
 
 def get_jyutping(text):
-    jp = jyutping.convert(text)
+    converted_text = j.jyutping(text, tone_numbers=True, spaces=True)
+    converted_words = converted_text.split()
+
+    for i, word in enumerate(converted_words):
+        if any(char in word for char in text):
+            converted_word = jyutping.convert(word)
+            converted_words[i] = converted_word
+    jyutping_sentence = " ".join(converted_words)
+
     for symbol in punctuation:
-        jp = jp.replace(symbol, " " + symbol + " ")
-    jp_array = jp.split()
-    return jp_array
+        jyutping_sentence = jyutping_sentence.replace(symbol, " " + symbol + " ")
+    jyutping_array = jyutping_sentence.split()
+
+    return jyutping_array
 
 
 def get_bert_feature(text, word2ph):
@@ -181,7 +192,7 @@ def g2p(text):
 if __name__ == "__main__":
     from text.chinese_bert import get_bert_feature
 
-    text = "啊！但是《原神》是由,米哈\游自主，  [研发]的一款全.新开放世界.冒险游戏"
+    text = "啊！但是《原神》是由,米哈\游自主，  [研发]的一款全.新开放世界.冒险游戏. 晒"
     text = text_normalize(text)
     print(text)
     phones, tones, word2ph = g2p(text)
