@@ -9,6 +9,7 @@ Unidecode
 amfm_decompy
 jieba
 transformers
+pinyin_jyutping
 pypinyin
 pyjyutping
 cn2an
