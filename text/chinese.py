@@ -53,7 +53,6 @@ INITIALS = [
     "uk",
     "ung",
 ]
-INITIALS += ["sp", "spl", "spn", "sil"]
 
 
 rep_map = {
