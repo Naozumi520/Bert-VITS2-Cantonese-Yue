@@ -1,4 +1,5 @@
 import re
+import unicodedata
 
 import cn2an
 
@@ -54,8 +55,8 @@ def replace_punctuation(text: str) -> str:
 
     replaced_text = pattern.sub(lambda x: REPLACE_MAP[x.group()], text)
 
-    replaced_text = re.sub(
-        r"[^\u4e00-\u9fa5" + "".join(PUNCTUATIONS) + r"]+", "", replaced_text
+    replaced_text = "".join(
+        c for c in replaced_text if unicodedata.name(c, "").startswith("CJK UNIFIED IDEOGRAPH") or c in PUNCTUATIONS
     )
 
     return replaced_text
