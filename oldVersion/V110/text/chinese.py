@@ -157,7 +157,7 @@ def get_jyutping(text):
     converted_words = converted_text.split()
 
     for i, word in enumerate(converted_words):
-        if any(char in word for char in text):
+        if set(word) <= set(text) - set(PUNCTUATIONS):
             converted_word = jyutping.convert(word)
             converted_words[i] = converted_word
     jyutping_sentence = " ".join(converted_words)
