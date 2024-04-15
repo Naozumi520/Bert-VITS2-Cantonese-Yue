@@ -49,7 +49,7 @@ def replace_punctuation(text: str) -> str:
         "」": "'",
     }
 
-    text = text.replace("嗯", "恩").replace("呣", "母")
+    # text = text.replace("嗯", "恩").replace("呣", "母")
     pattern = re.compile("|".join(re.escape(p) for p in REPLACE_MAP.keys()))
 
     replaced_text = pattern.sub(lambda x: REPLACE_MAP[x.group()], text)

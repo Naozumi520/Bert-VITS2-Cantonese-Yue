@@ -1,124 +1,131 @@
-import re
-from pathlib import Path
+import pinyin_jyutping
 
-import jieba.posseg as psg
-from pypinyin import Style, lazy_pinyin
-
-from style_bert_vits2.nlp.chinese.tone_sandhi import ToneSandhi
 from style_bert_vits2.nlp.symbols import PUNCTUATIONS
+from pyjyutping import jyutping
+
+from typing import List
+
+j = pinyin_jyutping.PinyinJyutping()
 
 
-with open(Path(__file__).parent / "opencpop-strict.txt", "r", encoding="utf-8") as f:
-    __PINYIN_TO_SYMBOL_MAP = {
-        line.split("\t")[0]: line.strip().split("\t")[1] for line in f.readlines()
-    }
+INITIALS = [
+    "aa",
+    "aai",
+    "aak",
+    "aap",
+    "aat",
+    "aau",
+    "ai",
+    "au",
+    "ap",
+    "at",
+    "ak",
+    "a",
+    "p",
+    "b",
+    "e",
+    "ts",
+    "t",
+    "dz",
+    "d",
+    "kw",
+    "k",
+    "gw",
+    "g",
+    "f",
+    "h",
+    "l",
+    "m",
+    "ng",
+    "n",
+    "s",
+    "y",
+    "w",
+    "c",
+    "z",
+    "j",
+    "ong",
+    "on",
+    "ou",
+    "oi",
+    "ok",
+    "o",
+    "uk",
+    "ung",
+]
+
+def get_jyutping(text: str) -> List[str]:
+    converted_text = j.jyutping(text, tone_numbers=True, spaces=True)
+    converted_words = converted_text.split()
+
+    for i, word in enumerate(converted_words):
+        if any(char in word for char in text):
+            converted_word = jyutping.convert(word)
+            converted_words[i] = converted_word
+    jyutping_sentence = " ".join(converted_words)
+
+    for symbol in PUNCTUATIONS:
+        jyutping_sentence = jyutping_sentence.replace(symbol, " " + symbol + " ")
+    jyutping_array = jyutping_sentence.split()
+
+    return jyutping_array
 
 
-def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
-    pattern = r"(?<=[{0}])\s*".format("".join(PUNCTUATIONS))
-    sentences = [i for i in re.split(pattern, text) if i.strip() != ""]
-    phones, tones, word2ph = __g2p(sentences)
-    assert sum(word2ph) == len(phones)
-    assert len(word2ph) == len(text)  # Sometimes it will crash,you can add a try-catch.
+def jyuping_to_initials_finals_tones(jyuping_syllables: List[str]) -> tuple[List[str], List[int], List[int]]:
+    initials_finals: List[str] = []
+    tones: List[int] = []
+    word2ph: List[int] = []
+
+    for syllable in jyuping_syllables:
+        if syllable in PUNCTUATIONS:
+            initials_finals.append(syllable)
+            tones.append(0)
+            word2ph.append(1)  # Add 1 for punctuation
+        elif syllable == "_":
+            initials_finals.append(syllable)
+            tones.append(0)
+            word2ph.append(1)  # Add 1 for underscore
+        else:
+            try:
+                tone = int(syllable[-1])
+                syllable_without_tone = syllable[:-1]
+            except ValueError:
+                tone = 0
+                syllable_without_tone = syllable
+
+            for initial in INITIALS:
+                if syllable_without_tone.startswith(initial):
+                    if syllable_without_tone.startswith("nga"):
+                        initials_finals.extend(
+                            [
+                                syllable_without_tone[:2],
+                                syllable_without_tone[2:] or syllable_without_tone[-1],
+                            ]
+                        )
+                        tones.extend([tone, tone])
+                        word2ph.append(2)
+                    else:
+                        final = syllable_without_tone[len(initial) :] or initial[-1]
+                        initials_finals.extend([initial, final])
+                        tones.extend([tone, tone])
+                        word2ph.append(2)
+                    break
+    assert len(initials_finals) == len(tones)
+    return initials_finals, tones, word2ph
+
+def g2p(text: str) -> tuple[List[str], List[int], List[int]]:
+    word2ph: List[int] = []
+    jyuping = get_jyutping(text)
+    # print(jyuping)
+    phones: List[str]
+    tones: List[int]
+    phones, tones, word2ph = jyuping_to_initials_finals_tones(jyuping)
+    print(phones, tones, word2ph)
     phones = ["_"] + phones + ["_"]
     tones = [0] + tones + [0]
     word2ph = [1] + word2ph + [1]
+    print(phones, tones, word2ph)
     return phones, tones, word2ph
-
-
-def __g2p(segments: list[str]) -> tuple[list[str], list[int], list[int]]:
-    phones_list = []
-    tones_list = []
-    word2ph = []
-    tone_modifier = ToneSandhi()
-    for seg in segments:
-        # Replace all English words in the sentence
-        seg = re.sub("[a-zA-Z]+", "", seg)
-        seg_cut = psg.lcut(seg)
-        initials = []
-        finals = []
-        seg_cut = tone_modifier.pre_merge_for_modify(seg_cut)  # type: ignore
-        for word, pos in seg_cut:
-            if pos == "eng":
-                continue
-            sub_initials, sub_finals = __get_initials_finals(word)
-            sub_finals = tone_modifier.modified_tone(word, pos, sub_finals)
-            initials.append(sub_initials)
-            finals.append(sub_finals)
-
-            # assert len(sub_initials) == len(sub_finals) == len(word)
-        initials = sum(initials, [])
-        finals = sum(finals, [])
-        #
-        for c, v in zip(initials, finals):
-            raw_pinyin = c + v
-            # NOTE: post process for pypinyin outputs
-            # we discriminate i, ii and iii
-            if c == v:
-                assert c in PUNCTUATIONS
-                phone = [c]
-                tone = "0"
-                word2ph.append(1)
-            else:
-                v_without_tone = v[:-1]
-                tone = v[-1]
-
-                pinyin = c + v_without_tone
-                assert tone in "12345"
-
-                if c:
-                    # 多音节
-                    v_rep_map = {
-                        "uei": "ui",
-                        "iou": "iu",
-                        "uen": "un",
-                    }
-                    if v_without_tone in v_rep_map.keys():
-                        pinyin = c + v_rep_map[v_without_tone]
-                else:
-                    # 单音节
-                    pinyin_rep_map = {
-                        "ing": "ying",
-                        "i": "yi",
-                        "in": "yin",
-                        "u": "wu",
-                    }
-                    if pinyin in pinyin_rep_map.keys():
-                        pinyin = pinyin_rep_map[pinyin]
-                    else:
-                        single_rep_map = {
-                            "v": "yu",
-                            "e": "e",
-                            "i": "y",
-                            "u": "w",
-                        }
-                        if pinyin[0] in single_rep_map.keys():
-                            pinyin = single_rep_map[pinyin[0]] + pinyin[1:]
-
-                assert pinyin in __PINYIN_TO_SYMBOL_MAP.keys(), (
-                    pinyin,
-                    seg,
-                    raw_pinyin,
-                )
-                phone = __PINYIN_TO_SYMBOL_MAP[pinyin].split(" ")
-                word2ph.append(len(phone))
-
-            phones_list += phone
-            tones_list += [int(tone)] * len(phone)
-    return phones_list, tones_list, word2ph
-
-
-def __get_initials_finals(word: str) -> tuple[list[str], list[str]]:
-    initials = []
-    finals = []
-    orig_initials = lazy_pinyin(word, neutral_tone_with_five=True, style=Style.INITIALS)
-    orig_finals = lazy_pinyin(
-        word, neutral_tone_with_five=True, style=Style.FINALS_TONE3
-    )
-    for c, v in zip(orig_initials, orig_finals):
-        initials.append(c)
-        finals.append(v)
-    return initials, finals
 
 
 if __name__ == "__main__":
