@@ -2,12 +2,18 @@
 @Desc: 全局配置文件读取
 """
 
-import argparse
-import yaml
-from typing import Dict, List
 import os
 import shutil
-import sys
+from typing import Dict, List
+
+import torch
+import yaml
+
+from style_bert_vits2.logging import logger
+
+
+# If not cuda available, set possible devices to cpu
+cuda_available = torch.cuda.is_available()
 
 
 class Resample_config:
@@ -86,12 +92,14 @@ class Bert_gen_config:
     def __init__(
         self,
         config_path: str,
-        num_processes: int = 2,
+        num_processes: int = 1,
         device: str = "cuda",
         use_multi_device: bool = False,
     ):
         self.config_path = config_path
         self.num_processes = num_processes
+        if not cuda_available:
+            device = "cpu"
         self.device = device
         self.use_multi_device = use_multi_device
 
@@ -102,20 +110,20 @@ class Bert_gen_config:
         return cls(**data)
 
 
-class Emo_gen_config:
-    """emo_gen 配置"""
+class Style_gen_config:
+    """style_gen 配置"""
 
     def __init__(
         self,
         config_path: str,
-        num_processes: int = 2,
+        num_processes: int = 4,
         device: str = "cuda",
-        use_multi_device: bool = False,
     ):
         self.config_path = config_path
         self.num_processes = num_processes
+        if not cuda_available:
+            device = "cpu"
         self.device = device
-        self.use_multi_device = use_multi_device
 
     @classmethod
     def from_dict(cls, dataset_path: str, data: Dict[str, any]):
@@ -131,17 +139,15 @@ class Train_ms_config:
         self,
         config_path: str,
         env: Dict[str, any],
-        base: Dict[str, any],
-        model: str,
+        # base: Dict[str, any],
+        model_dir: str,
         num_workers: int,
         spec_cache: bool,
         keep_ckpts: int,
     ):
         self.env = env  # 需要加载的环境变量
-        self.base = base  # 底模配置
-        self.model = (
-            model  # 训练模型存储目录，该路径为相对于dataset_path的路径，而非项目根目录
-        )
+        # self.base = base  # 底模配置
+        self.model_dir = model_dir  # 训练模型存储目录，该路径为相对于dataset_path的路径，而非项目根目录
         self.config_path = config_path  # 配置文件路径
         self.num_workers = num_workers  # worker数量
         self.spec_cache = spec_cache  # 是否启用spec缓存
@@ -156,7 +162,7 @@ class Train_ms_config:
 
 
 class Webui_config:
-    """webui 配置"""
+    """webui 配置 (for webui.py, not supported now)"""
 
     def __init__(
         self,
@@ -168,6 +174,8 @@ class Webui_config:
         share: bool = False,
         debug: bool = False,
     ):
+        if not cuda_available:
+            device = "cpu"
         self.device: str = device
         self.model: str = model  # 端口号
         self.config_path: str = config_path  # 是否公开部署，对外网开放
@@ -187,11 +195,20 @@ class Webui_config:
 
 class Server_config:
     def __init__(
-        self, models: List[Dict[str, any]], port: int = 5000, device: str = "cuda"
+        self,
+        port: int = 5000,
+        device: str = "cuda",
+        limit: int = 100,
+        language: str = "JP",
+        origins: List[str] = None,
     ):
-        self.models: List[Dict[str, any]] = models  # 需要加载的所有模型的配置
-        self.port: int = port  # 端口号
-        self.device: str = device  # 模型默认使用设备
+        self.port: int = port
+        if not cuda_available:
+            device = "cpu"
+        self.device: str = device
+        self.language: str = language
+        self.limit: int = limit
+        self.origins: List[str] = origins
 
     @classmethod
     def from_dict(cls, data: Dict[str, any]):
@@ -211,21 +228,27 @@ class Translate_config:
 
 
 class Config:
-    def __init__(self, config_path: str):
+    def __init__(self, config_path: str, path_config: dict[str, str]):
         if not os.path.isfile(config_path) and os.path.isfile("default_config.yml"):
             shutil.copy(src="default_config.yml", dst=config_path)
-            print(
-                f"已根据默认配置文件default_config.yml生成配置文件{config_path}。请按该配置文件的说明进行配置后重新运行。"
+            logger.info(
+                f"A configuration file {config_path} has been generated based on the default configuration file default_config.yml."
             )
-            print("如无特殊需求，请勿修改default_config.yml或备份该文件。")
-            sys.exit(0)
-        with open(file=config_path, mode="r", encoding="utf-8") as file:
+            logger.info(
+                "If you have no special needs, please do not modify default_config.yml."
+            )
+            # sys.exit(0)
+        with open(config_path, "r", encoding="utf-8") as file:
             yaml_config: Dict[str, any] = yaml.safe_load(file.read())
-            dataset_path: str = yaml_config["dataset_path"]
-            openi_token: str = yaml_config["openi_token"]
+            model_name: str = yaml_config["model_name"]
+            self.model_name: str = model_name
+            if "dataset_path" in yaml_config:
+                dataset_path = yaml_config["dataset_path"]
+            else:
+                dataset_path = os.path.join(path_config["dataset_root"], model_name)
             self.dataset_path: str = dataset_path
-            self.mirror: str = yaml_config["mirror"]
-            self.openi_token: str = openi_token
+            self.assets_root: str = path_config["assets_root"]
+            self.out_dir = os.path.join(self.assets_root, model_name)
             self.resample_config: Resample_config = Resample_config.from_dict(
                 dataset_path, yaml_config["resample"]
             )
@@ -237,8 +260,8 @@ class Config:
             self.bert_gen_config: Bert_gen_config = Bert_gen_config.from_dict(
                 dataset_path, yaml_config["bert_gen"]
             )
-            self.emo_gen_config: Emo_gen_config = Emo_gen_config.from_dict(
-                dataset_path, yaml_config["emo_gen"]
+            self.style_gen_config: Style_gen_config = Style_gen_config.from_dict(
+                dataset_path, yaml_config["style_gen"]
             )
             self.train_ms_config: Train_ms_config = Train_ms_config.from_dict(
                 dataset_path, yaml_config["train_ms"]
@@ -249,13 +272,21 @@ class Config:
             self.server_config: Server_config = Server_config.from_dict(
                 yaml_config["server"]
             )
-            self.translate_config: Translate_config = Translate_config.from_dict(
-                yaml_config["translate"]
-            )
+            # self.translate_config: Translate_config = Translate_config.from_dict(
+            #     yaml_config["translate"]
+            # )
 
 
-parser = argparse.ArgumentParser()
-# 为避免与以前的config.json起冲突，将其更名如下
-parser.add_argument("-y", "--yml_config", type=str, default="config.yml")
-args, _ = parser.parse_known_args()
-config = Config(args.yml_config)
+with open(os.path.join("configs", "paths.yml"), "r", encoding="utf-8") as f:
+    path_config: dict[str, str] = yaml.safe_load(f.read())
+    # Should contain the following keys:
+    # - dataset_root: the root directory of the dataset, default to "Data"
+    # - assets_root: the root directory of the assets, default to "model_assets"
+
+
+try:
+    config = Config("config.yml", path_config)
+except (TypeError, KeyError):
+    logger.warning("Old config.yml found. Replace it with default_config.yml.")
+    shutil.copy(src="default_config.yml", dst="config.yml")
+    config = Config("config.yml", path_config)
