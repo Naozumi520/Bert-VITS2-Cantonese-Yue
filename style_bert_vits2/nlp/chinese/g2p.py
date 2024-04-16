@@ -59,7 +59,7 @@ def get_jyutping(text: str) -> List[str]:
     converted_words = converted_text.split()
 
     for i, word in enumerate(converted_words):
-        if any(char in word for char in text):
+        if set(word) <= set(text) - set(PUNCTUATIONS):
             from style_bert_vits2.nlp.chinese.jyutping_local_mapping import local_mapping
 
             converted_word = local_mapping.get(word, word)
