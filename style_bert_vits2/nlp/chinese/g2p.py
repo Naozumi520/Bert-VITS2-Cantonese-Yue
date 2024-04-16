@@ -60,7 +60,11 @@ def get_jyutping(text: str) -> List[str]:
 
     for i, word in enumerate(converted_words):
         if any(char in word for char in text):
-            converted_word = jyutping.convert(word)
+            from style_bert_vits2.nlp.chinese.jyutping_local_mapping import local_mapping
+
+            converted_word = local_mapping.get(word, word)
+            if converted_word == word:
+                converted_word = jyutping.convert(word)
             converted_words[i] = converted_word
     jyutping_sentence = " ".join(converted_words)
 
