@@ -1,10 +1,26 @@
+# Naozumi520/Bert-VITS2-Cantonese-Yue
 Demo: https://huggingface.co/spaces/Naozumi0512/Bert-VITS2-Cantonese
 
+> [!NOTE]
+> ## This repository is no longer being actively maintained. The development of Bert-VITS2 in Cantonese has been moved to a new repository: [hon9kon9ize/Bert-VITS2-Cantonese](https://github.com/hon9kon9ize/Bert-VITS2-Cantonese).
+> 
+> The new repository will continue improving the model, including training on longer duration audio data. Additionally, the model will maintain its ability to output speech in other languages, not limited to Cantonese.
+> 
+> We encourage users and contributors to follow the new repository for the latest updates, improvements, and contributions to the Cantonese TTS model.
+> 
+> ## Call for Audio Data Contributions
+> 
+> To further improve the Cantonese TTS model, we are actively seeking contributions of audio data. If you have high-quality audio recordings in Cantonese (or other languages), please consider contributing them to the project.
+> 
+> **Requirements for audio data contributions:**
+> 
+> 1. Accurate transcriptions: Each audio file should have a corresponding text transcription that accurately represents the spoken content.
+> 2. Speaker separation: If the audio contains multiple speakers, please ensure that the speakers are separated and tagged appropriately.
+> 
+> By contributing your audio data, you'll be helping to enhance the model's performance and enable more natural and expressive speech synthesis. Meanwhile we will ensure that the final model cannot reproduce the original speaker's voice directly.
 
-
-
-## Original README content
-
+<details>
+<summary>Original README content</summary>
 <div align="center">
 
 <img alt="LOGO" src="https://cdn.jsdelivr.net/gh/fishaudio/fish-diffusion@main/images/logo_512x512.png" width="256" height="256" />
@@ -60,3 +76,4 @@ FishAudio Team
 </a>
 
 [//]: # (# 本项目所有代码引用均已写明，bert部分代码思路来源于[AI峰哥]&#40;https://www.bilibili.com/video/BV1w24y1c7z9&#41;，与[vits_chinese]&#40;https://github.com/PlayVoice/vits_chinese&#41;无任何关系。欢迎各位查阅代码。同时，我们也对该开发者的[碰瓷，乃至开盒开发者的行为]&#40;https://www.bilibili.com/read/cv27101514/&#41;表示强烈谴责。)
+</details>
